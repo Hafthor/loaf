@@ -12,15 +12,19 @@ loaf language - a json template based functional language for building restful j
   - automatic object property discovery / checking
   - support for streaming json responses as data becomes available
 
+Note: regarding the examples below, the syntax hasn't been entirely nailed down, so don't get too attached to it.
+
 # Forward Assignments
 In most languages, it is expected that you should be able to call a function/method that appears later in the file. This is a forward reference. Few languages support this for assignments, but loaf does. It can allow this because they are immutable assignments, not variable.
 
+    abc: ab+c
     ab: a+b
     a: 1
     b: 2
+    c: 3
     
 # Deferred Resolution
-This is like Promises in JavaScript, but you can reference the Promise in an equation, for example, and that will seemlessly create another promise.
+This is like Promises in JavaScript or Futures in Java, but you can reference the Promise in an equation, for example, and that will seemlessly create another promise. Essentially all assignments are deferred, but some become instantly resolved when they have no deferred values referenced in their expression.
 
     ab: a+b
     a: service_a/get-a-value?x={x}
@@ -91,3 +95,6 @@ loaf came out of a desire to easily orchestrate web services. When I was an cons
 The per-request memory pooling came as I was building some applications that used a ridiculous amount of memory and how GC was pausing the world for many seconds. I found this silly given how there was almost no memory actually being shared between requests. I started thinking of how to introduce memory pooling into an existing language like Java, but this would have been a daunting task.
 
 Many of the other features of loaf just came from my years of experience and my bug bears about development.
+
+# On Syntax
+Of primary importance is readability. Part of that is avoidance of non-value added noise. This includes the requirement of named types. The syntax tries to be obvious. The language should be powerful, but not at the expense of encouraging opaque 'design patterns' like dependency injection. Design patterns are often evidence of language weakness. loaf is designed to support the goal of the patterns without the developer having to do it.
