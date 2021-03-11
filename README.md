@@ -29,10 +29,10 @@ This is like Promises in JavaScript or Futures in Java, but you can reference th
 
     total: subtotal + tax
     tax: subtotal * taxrate
-    taxrate: tax_service/get?zip={cust.addr.zip}
+    taxrate: //tax_service/get?zip={cust.addr.zip}
     subtotal: price * {qty}
-    price: price_service/get?cust={cust.id}
-    cust: customer_service/get-customer?user={user}&password={pwd}
+    price: //price_service/get?cust={cust.id}
+    cust: //customer_service/get-customer?user={user}&password={pwd}
 
 Note that the total is the same as before, however now it is a deferred value that waits on the deferred values of taxrate and price which are deferred based on getting the value for cust. loaf automatically makes the service calls when it can. In this example, the call to customer_service is made, then the parallel calls to tax_service and price_service are made. Then the value of total is resolved.
 
@@ -40,8 +40,8 @@ Note that the total is the same as before, however now it is a deferred value th
 The only number type in loaf is a magical unbounded number type that is similiar to Java's BigDecimal.
 
     nickel: 0.05
-    dime: nickel+nickel
-    total: nickel+dime
+    dime: nickel + nickel
+    total: nickel + dime
 
     {"nickel": 0.05, "dime": 0.10, "total": 0.15}
     
@@ -77,10 +77,10 @@ Rather than strong-typing, loaf uses automatic typing to discover types in your 
 As a response object is being put together, if the caller supports it, a streaming JSON result may be returned.
 
     /: {
-      ab: a+b
-      a: service_a/get-a-value?x={x}
-      b: service_b/get-b-value?x={x}
-      x: service_x/get-x-value
+      ab: a + b
+      a: //service_a/get-a-value?x={x}
+      b: //service_b/get-b-value?x={x}
+      x: //service_x/get-x-value
     }
 
 let's suppose that service a is slower than b, what would be returned is:
@@ -101,3 +101,5 @@ Many of the other features of loaf just came from my years of experience and my 
 
 # On Syntax
 Of primary importance is readability. Part of that is avoidance of non-value added noise. This includes the requirement of named types. The syntax tries to be obvious. The language should be powerful, but not at the expense of encouraging opaque 'design patterns' like dependency injection. Design patterns are often evidence of language weakness. loaf is designed to support the goal of the patterns without the developer having to do it.
+
+If possible, loaf will avoid having any keywords. If possible, loaf will allow variables with spaces, although this is a stretch goal.
