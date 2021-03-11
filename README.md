@@ -32,6 +32,14 @@ Note that the ab is the same as before, however now it is a deferred value that 
 # Numbers
 The only number type in loaf is a magical unbounded number type that is similiar to Java's BigDecimal.
 
+    nickel: 0.05
+    dime: nickel+nickel
+    total: nickel+dime
+
+    {"nickel": 0.05, "dime": 0.10, "total": 0.15}
+    
+Note that dime is 0.10 vs 0.1. Also note that total is 0.15 rather than 0.15000000000000002.
+
 # Strings
 The only string type in loaf is a essentially an array of bytes that is interpretted as UTF-8 text.
 
