@@ -69,12 +69,12 @@ Rather than strong-typing, loaf uses automatic typing to discover types in your 
 # Support for Streaming JSON
 As a response object is being put together, if the caller supports it, a streaming JSON result may be returned.
 
-/: {
-    ab: a+b
-    a: service_a/get-a-value?x={x}
-    b: service_b/get-b-value?x={x}
-    x: service_x/get-x-value
-}
+    /: {
+      ab: a+b
+      a: service_a/get-a-value?x={x}
+      b: service_b/get-b-value?x={x}
+      x: service_x/get-x-value
+    }
 
 let's suppose that service a is slower than b, what would be returned is:
 
