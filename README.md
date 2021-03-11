@@ -17,21 +17,24 @@ Note: regarding the examples below, the syntax hasn't been entirely nailed down,
 # Forward Assignments
 In most languages, it is expected that you should be able to call a function/method that appears later in the file. This is a forward reference. Few languages support this for assignments, but loaf does. It can allow this because they are immutable assignments, not variable.
 
-    abc: ab+c
-    ab: a+b
-    a: 1
-    b: 2
-    c: 3
+    total: subtotal + tax
+    tax: subtotal * taxrate
+    taxrate: 0.10
+    subtotal: price * qty
+    price: 123.00
+    qty: 3
     
 # Deferred Resolution
 This is like Promises in JavaScript or Futures in Java, but you can reference the Promise in an equation, for example, and that will seemlessly create another promise. Essentially all assignments are deferred, but some become instantly resolved when they have no deferred values referenced in their expression.
 
-    ab: a+b
-    a: service_a/get-a-value?x={x}
-    b: service_b/get-b-value?x={x}
-    x: service_x/get-x-value
+    total: subtotal + tax
+    tax: subtotal * taxrate
+    taxrate: tax_service/get?zip={cust.addr.zip}
+    subtotal: price * {qty}
+    price: price_service/get?cust={cust.id}
+    cust: customer_service/get-customer?user={user}&password={pwd}
 
-Note that the ab is the same as before, however now it is a deferred value that waits on the deferred values of a and b which are deferred based on getting the value for x. loaf automatically makes the service calls when it can. In this example, the call to service_x is made, then the parallel calls to service_a and service_b are made. Then the value of ab is resolved.
+Note that the total is the same as before, however now it is a deferred value that waits on the deferred values of taxrate and price which are deferred based on getting the value for cust. loaf automatically makes the service calls when it can. In this example, the call to customer_service is made, then the parallel calls to tax_service and price_service are made. Then the value of total is resolved.
 
 # Numbers
 The only number type in loaf is a magical unbounded number type that is similiar to Java's BigDecimal.
