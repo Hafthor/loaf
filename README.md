@@ -85,3 +85,9 @@ let's suppose that service a is slower than b, what would be returned is:
     {"b":222}\n ...wait
     {"a":111, "ab":333}
 
+# Origins of loaf
+loaf came out of a desire to easily orchestrate web services. When I was an consultant building iOS apps, or web SPAs, I would have code that was making calls to the server, but I wanted a way to efficiently put together all the data in one response. One user action, one http call. I considered building some sort of DSL for this, but then I was exposed to XSLT which got me thinking of a more declarative approach. loaf began as something like https://jsonnet.org.
+
+The per-request memory pooling came as I was building some applications that used a ridiculous amount of memory and how GC was pausing the world for many seconds. I found this silly given how there was almost no memory actually being shared between requests. I started thinking of how to introduce memory pooling into an existing language like Java, but this would have been a daunting task.
+
+Many of the other features of loaf just came from my years of experience and my bug bears about development.
