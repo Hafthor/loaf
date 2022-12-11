@@ -61,7 +61,7 @@ There is special support for encoders/decoders that allows you to chain them, bu
 Rather than a single memory pool shared by the application, each external request creates a private pool. Once the response is sent, the private pool is discarded. There is no persistent memory, rather, loaf applications are expected to use the built-in cache. By having per-request memory pooling, the demands of garbage collection is greatly reduced. loaf also avoids creating heap objects. It is generally cheaper/faster to re-read and parse the source many times over, rather than making a parsed copy. loaf will initially use a naive approach where some things may be reprocessed many times. Future versions are expected to support internally caching these. Having per-request memory pooling also means that even when GC occurs, this does not stop the world, only the thread actively using pool.
 
 ## Exporting / Importing Functions as RESTful JSON Web Services
-By default, a service is private and only used on the same server and in the common loaf runtime. By exporting a service, you can allow it to be merely called over http by a foriegn service, or, if suitable, you can allow it to be consumed as code to be run on the foriegn server's loaf runtime.
+By default, a service is private and only used on the same server and in the common loaf runtime. By exporting a service, you can allow it to be merely called over HTTP by a foriegn service, or, if suitable, you can allow it to be consumed as code to be run on the foriegn server's loaf runtime.
 
 When importing a service, this can be either a reference, which if supported will bring in discovery information for development purposes, or it can attempt to pull the code in to be run locally.
 
@@ -69,7 +69,7 @@ When importing a service, this can be either a reference, which if supported wil
 You normally only have one copy of the loaf runtime operating. This is to allow cross-app calls with using HTTP and allows for avoidance of forced early deferral resolution. loafd also hosts a single common cache pool, which allows all the memory to be safely used. Cache is the only memory store in loaf that survives the request, and can be used as application state storage using an infinite cache lifetime. Having a single common runtime also allows portions of your loaf stack to be upgraded while running.
 
 ## HTTP Symantics
-Because loaf is built for making an consuming web services, it is an http native. As such, it natively observes cache symantics using the common runtime cache pool. loaf also allow injection, logging, redirection and monitoring at any boundary that could be exported as HTTP. This allows for data tracing, data flow diagraming, diagnosis and easy metrics reporting and alarming.
+Because loaf is built for making an consuming web services, it is an HTTP native. As such, it natively observes cache symantics using the common runtime cache pool. loaf also allow injection, logging, redirection and monitoring at any boundary that could be exported as HTTP. This allows for data tracing, data flow diagraming, diagnosis and easy metrics reporting and alarming.
 
 ## Testing
 Rather than testing being an afterthought, testing is built in. Tests are declared in the same source as the code they test and tests are just declarations of givens and expectations. Code-free tests.
