@@ -1,0 +1,8 @@
+# Design Considerations
+A primary consideration must be what languages and tools will be used to create loaf.
+
+Some constraints are that we wish to control the way memory is used, specifically, we want per request memory pools. This greatly limits our choices of languages to use, since most do not offer this level of control. A potential work-around for this would be to use a garbage collected high-level language, but use operating system memory primitives to allocate and manage these memory blocks using the high-level language. Another possible work-around is to use two different languages, one for the compiler, and one for the runtime, but this would generally involve a lot of duplicated overlap and impedance mismatch type problems. Ideally, we would like the runtime to be able to run loaf code directly rather than having a compile step.
+
+Another major constraint is that we wish to use UTF-8 string types, which basically makes the value proposition of using an established high-level language's ecosystem much more complicated. Essentially, it limits our choices to using Go language. Go might be a good choice given its UTF-8 native strings, but it is a GC language. But given its otherwise low-level nature, we might be able to use it to manage operating system memory in the manner we want, but we would have to be exceptionally careful about our use of its heap to avoid growing it and interfering with loaf memory pools. We would have to carefully manage the risk of the Go runtime attempting to allocate memory and failing because we were just a little too aggressive in our use of memory for caching, for example.
+
+We could use a lower-level language like Rust, Swift or even C/C++. Rust is probably the most ideal choice of those.
