@@ -2,14 +2,14 @@ loaf language - a JSON template based functional language for building RESTful J
 
 Features:
   - forward assignments with automatic deferral resolution including serial/parallel async operations
-  - native number type similiar to Java's BigDecimal
+  - native number type similar to Java's BigDecimal
   - native string type is utf-8 with unicode spec iterators/streams (chars, graphemes)
-  - bidirectional/collapseable encoders/decoders
+  - bidirectional/collapsible encoders/decoders
   - request/response unshared memory pools to lower copy/alloc/gc costs - only shared/long-lived memory is cache
   - functions are exportable as JSON RESTful endpoints and RESTful JSON endpoints are consumable like functions
   - single runtime with common cache engine
   - live code change deployments
-  - language level support for HTTP symantics including caching, logging, metrics, injection, redirection
+  - language level support for HTTP semantics including caching, logging, metrics, injection, redirection
   - support for visualization tools to diagram dataflow, navigate architecture or watch/debug traffic
   - declarative same-source test specifications
   - automatic object property discovery / checking
@@ -29,7 +29,7 @@ In most languages, it is expected that you should be able to call a function/met
     qty: 3
     
 ## Deferred Resolution
-This is like Promises in JavaScript or Futures in Java, but you can reference the Promise in an equation, for example, and that will seemlessly create another promise. Essentially all assignments are deferred, but some become instantly resolved when they have no deferred values referenced in their expression.
+This is like Promises in JavaScript or Futures in Java, but you can reference the Promise in an equation, for example, and that will seamlessly create another promise. Essentially all assignments are deferred, but some become instantly resolved when they have no deferred values referenced in their expression.
 
     total: subtotal + tax
     tax: subtotal * taxrate
@@ -41,7 +41,7 @@ This is like Promises in JavaScript or Futures in Java, but you can reference th
 Note that the total is the same as before, however now it is a deferred value that waits on the deferred values of taxrate and price which are deferred based on getting the value for cust. loaf automatically makes the service calls when it can. In this example, the call to customer_service is made, then the parallel calls to tax_service and price_service are made. Then the value of total is resolved.
 
 ## Numbers
-The only native number type in loaf is a magical unbounded number type that is similiar to Java's BigDecimal.
+The only native number type in loaf is a magical unbounded number type that is similar to Java's BigDecimal.
 
     nickel: 0.05
     dime: nickel + nickel
@@ -52,7 +52,7 @@ The only native number type in loaf is a magical unbounded number type that is s
 Note that dime is 0.10 vs 0.1. Also note that total is 0.15 rather than 0.15000000000000002.
 
 ## Strings
-The only string type in loaf is a essentially an array of bytes that is interpretted as UTF-8 text.
+The only string type in loaf is a essentially an array of bytes that is interpreted as UTF-8 text.
 
 ## Encoders/Decoders
 There is special support for encoders/decoders that allows you to chain them, but also it supports collapsing them. For example, if you read from a query string parameter, and output that to a JSON string, that is done with a stack of a query string decoder with a JSON string encoder. If you, instead read from a JSON string and output to a different JSON string, the stack collapses and the transformation becomes a noop. Well, technically, it is collapsed to just a JSON validator. These encoders/decoders are used to avoid creation of heap objects.
@@ -61,15 +61,15 @@ There is special support for encoders/decoders that allows you to chain them, bu
 Rather than a single memory pool shared by the application, each external request creates a private pool. Once the response is sent, the private pool is discarded. There is no persistent memory, rather, loaf applications are expected to use the built-in cache. By having per-request memory pooling, the demands of garbage collection is greatly reduced. loaf also avoids creating heap objects. It is generally cheaper/faster to re-read and parse the source many times over, rather than making a parsed copy. loaf will initially use a naive approach where some things may be reprocessed many times. Future versions are expected to support internally caching these. Having per-request memory pooling also means that even when GC occurs, this does not stop the world, only the thread actively using pool.
 
 ## Exporting / Importing Functions as RESTful JSON Web Services
-By default, a service is private and only used on the same server and in the common loaf runtime. By exporting a service, you can allow it to be merely called over HTTP by a foriegn service, or, if suitable, you can allow it to be consumed as code to be run on the foriegn server's loaf runtime.
+By default, a service is private and only used on the same server and in the common loaf runtime. By exporting a service, you can allow it to be merely called over HTTP by a foreign service, or, if suitable, you can allow it to be consumed as code to be run on the foreign server's loaf runtime.
 
 When importing a service, this can be either a reference, which if supported will bring in discovery information for development purposes, or it can attempt to pull the code in to be run locally.
 
 ## loafd Runtime
 You normally only have one copy of the loaf runtime operating. This is to allow cross-app calls with using HTTP and allows for avoidance of forced early deferral resolution. loafd also hosts a single common cache pool, which allows all the memory to be safely used. Cache is the only memory store in loaf that survives the request, and can be used as application state storage using an infinite cache lifetime. Having a single common runtime also allows portions of your loaf stack to be upgraded while running.
 
-## HTTP Symantics
-Because loaf is built for making an consuming web services, it is an HTTP native. As such, it natively observes cache symantics using the common runtime cache pool. loaf also allow injection, logging, redirection and monitoring at any boundary that could be exported as HTTP. This allows for data tracing, data flow diagraming, diagnosis and easy metrics reporting and alarming.
+## HTTP Semantics
+Because loaf is built for making an consuming web services, it is an HTTP native. As such, it natively observes cache semantics using the common runtime cache pool. loaf also allow injection, logging, redirection and monitoring at any boundary that could be exported as HTTP. This allows for data tracing, data flow diagraming, diagnosis and easy metrics reporting and alarming.
 
 ## Testing
 Rather than testing being an afterthought, testing is built in. Tests are declared in the same source as the code they test and tests are just declarations of givens and expectations. Code-free tests.
