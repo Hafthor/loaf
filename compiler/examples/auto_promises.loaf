@@ -1,0 +1,28 @@
+{
+  // Simple function call - automatically treated as promise
+  user_id: 123,
+  user_data: fetch_user(user_id),
+  
+  // Function with multiple arguments
+  search_query: "loaf programming",
+  search_results: search_api(search_query, 10),
+  
+  // Nested function calls
+  config: get_config(),
+  database_url: build_connection_string(config, "production"),
+  
+  // Static data
+  app_name: "loaf runtime demo",
+  version: "1.0.0",
+  
+  // HTTP endpoint demonstration
+  api_status: "@endpoint:GET:/status",
+  
+  // Response combining promise and static data
+  status_response: {
+    name: app_name,
+    version: version,
+    user_count: user_data,
+    search_count: search_results
+  }
+}

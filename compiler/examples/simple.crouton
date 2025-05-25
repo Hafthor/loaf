@@ -1,0 +1,51 @@
+{
+  "instructions": [
+    {
+      "LoadConstant": {
+        "Number": 42.0
+      }
+    },
+    {
+      "StoreVariable": "number"
+    },
+    {
+      "LoadConstant": {
+        "Number": 10.0
+      }
+    },
+    {
+      "LoadConstant": {
+        "Number": 5.0
+      }
+    },
+    "Add",
+    {
+      "StoreVariable": "calculation"
+    },
+    {
+      "LoadConstant": {
+        "String": "Hello, World!"
+      }
+    },
+    {
+      "StoreVariable": "message"
+    },
+    {
+      "LoadConstant": {
+        "String": "Hello, "
+      }
+    },
+    {
+      "LoadConstant": {
+        "String": "loaf!"
+      }
+    },
+    "Add",
+    {
+      "StoreVariable": "greeting"
+    }
+  ],
+  "constants": [],
+  "endpoints": {},
+  "entry_point": 0
+}

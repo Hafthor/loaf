@@ -1,0 +1,4 @@
+{
+  a: fetch_data(),
+  b: a.value
+}

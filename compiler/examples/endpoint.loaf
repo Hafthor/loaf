@@ -1,0 +1,7 @@
+{
+  response: {
+    message: "Hello from loaf!",
+    timestamp: 1234567890
+  },
+  api_handler: @endpoint:GET:/api/hello
+}

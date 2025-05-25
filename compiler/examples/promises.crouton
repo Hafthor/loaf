@@ -1,0 +1,1 @@
+{"instructions":[{"LoadConstant":{"String":"Hello from loaf!"}},{"StoreVariable":"greeting"},{"LoadConstant":{"Number":123.0}},{"StoreVariable":"user_id"},{"LoadVariable":"user_id"},{"CreatePromise":"fetch_user:0ad8eda5-130b-4316-90d1-2dc2929826bc"},{"StoreVariable":"user_data"}],"constants":[],"endpoints":{},"entry_point":0}

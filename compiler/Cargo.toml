@@ -1,0 +1,18 @@
+[package]
+name = "loaf-lang"
+version = "0.1.0"
+edition = "2021"
+description = "A declarative JSON-style programming language compiler that generates bytecode for the loaf runtime"
+authors = ["loaf Team"]
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tokio = { version = "1.0", features = ["full"] }
+anyhow = "1.0"
+thiserror = "1.0"
+clap = { version = "4.0", features = ["derive"] }
+uuid = { version = "1.0", features = ["v4"] }
+
+[dev-dependencies]
+tempfile = "3.0"

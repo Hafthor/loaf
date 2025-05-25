@@ -1,0 +1,5 @@
+{
+  user_data: "some_data",
+  user_name: user_data + ".name",
+  greeting: "Hello, " + user_name
+}

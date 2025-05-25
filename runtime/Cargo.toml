@@ -1,0 +1,17 @@
+[package]
+name = "loaf"
+version = "0.1.0"
+edition = "2021"
+description = "A bytecode runtime with multiple memory-managed heaps"
+authors = ["Hafthor"]
+
+[dependencies]
+byteorder = "1.4"      # For encoding/decoding bytes
+thiserror = "1.0"      # For error handling
+rustc-hash = "1.1"     # Fast hashing for the runtime
+dashmap = "5.4"        # Thread-safe hash maps
+crossbeam = "0.8"      # Concurrent utilities
+parking_lot = "0.12"   # More efficient synchronization primitives
+
+[dev-dependencies]
+tempfile = "3.8"       # For temporary files in tests

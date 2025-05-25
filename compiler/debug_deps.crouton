@@ -1,0 +1,1 @@
+{"instructions":[{"LoadConstant":{"Number":123.0}},{"StoreVariable":"user_data"},{"LoadVariable":"user_data"},{"GetProperty":"name"},{"StoreVariable":"username"}],"constants":[],"endpoints":{},"entry_point":0}

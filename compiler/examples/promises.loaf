@@ -1,0 +1,5 @@
+{
+  user_id: 123,
+  user_data: fetch_user(user_id),
+  greeting: "Hello from loaf!"
+}

@@ -1,0 +1,4 @@
+{
+  user_name: "test",
+  greeting: "Hello, " + user_name
+}

@@ -1,0 +1,6 @@
+{
+  message: "Hello, World!",
+  number: 42,
+  calculation: 10 + 5,
+  greeting: "Hello, " + "loaf!"
+}

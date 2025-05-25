@@ -1,0 +1,6 @@
+{
+  user_id: 123,
+  user_data: fetch_user(user_id),
+  user_name: user_data.name,
+  greeting: "Hello, " + user_name
+}
