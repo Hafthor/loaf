@@ -550,7 +550,7 @@ mod tests {
         let demo_module = generate_demo_module();
         
         let temp_dir = tempdir().unwrap();
-        let file_path = temp_dir.path().join("demo.bytecode");
+        let file_path = temp_dir.path().join("demo.crouton");
         
         let result = write_bytecode(&demo_module, &file_path);
         assert!(result.is_ok());

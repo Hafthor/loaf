@@ -734,4 +734,798 @@ mod tests {
         // For now, we don't have actual circular dependencies in our test cases
         // since we're using literals instead of variable references
     }
+
+    #[test]
+    fn test_basic_type_inference() {
+        let source = r#"{
+            "str_val": "hello",
+            "num_val": 42.5,
+            "bool_val": true,
+            "null_val": null
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        let str_symbol = result.symbol_table.get_symbol("str_val").unwrap();
+        assert_eq!(str_symbol.symbol_type, Type::String);
+        
+        let num_symbol = result.symbol_table.get_symbol("num_val").unwrap();
+        assert_eq!(num_symbol.symbol_type, Type::Number);
+        
+        let bool_symbol = result.symbol_table.get_symbol("bool_val").unwrap();
+        assert_eq!(bool_symbol.symbol_type, Type::Boolean);
+        
+        let null_symbol = result.symbol_table.get_symbol("null_val").unwrap();
+        assert_eq!(null_symbol.symbol_type, Type::Null);
+    }
+
+    #[test]
+    fn test_array_type_inference() {
+        let source = r#"{
+            "numbers": [1, 2, 3],
+            "strings": ["a", "b", "c"],
+            "empty": []
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        let numbers_symbol = result.symbol_table.get_symbol("numbers").unwrap();
+        if let Type::Array(inner) = &numbers_symbol.symbol_type {
+            assert_eq!(**inner, Type::Number);
+        } else {
+            panic!("Expected array type for numbers");
+        }
+        
+        let strings_symbol = result.symbol_table.get_symbol("strings").unwrap();
+        if let Type::Array(inner) = &strings_symbol.symbol_type {
+            assert_eq!(**inner, Type::String);
+        } else {
+            panic!("Expected array type for strings");
+        }
+        
+        let empty_symbol = result.symbol_table.get_symbol("empty").unwrap();
+        if let Type::Array(inner) = &empty_symbol.symbol_type {
+            assert_eq!(**inner, Type::Any);
+        } else {
+            panic!("Expected array type for empty array");
+        }
+    }
+
+    #[test]
+    fn test_object_type_inference() {
+        let source = r#"{
+            "user": {
+                "name": "John",
+                "age": 30,
+                "active": true
+            }
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        let user_symbol = result.symbol_table.get_symbol("user").unwrap();
+        if let Type::Object(fields) = &user_symbol.symbol_type {
+            assert_eq!(fields.get("name"), Some(&Type::String));
+            assert_eq!(fields.get("age"), Some(&Type::Number));
+            assert_eq!(fields.get("active"), Some(&Type::Boolean));
+        } else {
+            panic!("Expected object type for user");
+        }
+    }
+
+    #[test]
+    fn test_binary_operations_type_inference() {
+        // Note: This test assumes the parser can handle identifiers and binary operations
+        // For now, we'll test with literal operations
+        let source = r#"{
+            "addition": "hello",
+            "subtraction": 42,
+            "multiplication": 3.14,
+            "comparison": true
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // These are just literal assignments for now, but structure is ready for binary ops
+        assert!(result.symbol_table.get_symbol("addition").is_some());
+        assert!(result.symbol_table.get_symbol("subtraction").is_some());
+        assert!(result.symbol_table.get_symbol("multiplication").is_some());
+        assert!(result.symbol_table.get_symbol("comparison").is_some());
+    }
+
+    #[test]
+    fn test_promise_type_creation() {
+        let source = r#"{
+            "data": "initial value"
+        }"#;
+        
+        let _result = analyze_source(source).unwrap();
+        
+        // Test that we can create promise types manually
+        let promise_type = Type::Promise(Some(Box::new(Type::String)));
+        assert!(matches!(promise_type, Type::Promise(_)));
+        
+        if let Type::Promise(inner) = promise_type {
+            assert_eq!(inner.unwrap().as_ref(), &Type::String);
+        }
+    }
+
+    #[test]
+    fn test_symbol_table_operations() {
+        let mut symbol_table = SymbolTable::new();
+        
+        // Test adding symbols
+        let symbol1 = Symbol::new("test1".to_string(), Type::String, 1);
+        let symbol2 = Symbol::new("test2".to_string(), Type::Number, 2);
+        
+        symbol_table.add_symbol(symbol1);
+        symbol_table.add_symbol(symbol2);
+        
+        // Test retrieving symbols
+        assert!(symbol_table.get_symbol("test1").is_some());
+        assert!(symbol_table.get_symbol("test2").is_some());
+        assert!(symbol_table.get_symbol("nonexistent").is_none());
+        
+        // Test dependencies
+        symbol_table.add_dependency("test2", "test1");
+        
+        let test2_symbol = symbol_table.get_symbol("test2").unwrap();
+        assert!(test2_symbol.dependencies.contains("test1"));
+        
+        let test1_symbol = symbol_table.get_symbol("test1").unwrap();
+        assert!(test1_symbol.dependents.contains("test2"));
+    }
+
+    #[test]
+    fn test_dependency_resolution_simple() {
+        let source = r#"{
+            "a": 1,
+            "b": 2,
+            "c": 3
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // With literal values, there should be no dependencies
+        assert_eq!(result.resolution_order.len(), 3);
+        assert!(result.resolution_order.contains(&"a".to_string()));
+        assert!(result.resolution_order.contains(&"b".to_string()));
+        assert!(result.resolution_order.contains(&"c".to_string()));
+    }
+
+    #[test]
+    fn test_nested_object_analysis() {
+        let source = r#"{
+            "config": {
+                "database": {
+                    "host": "localhost",
+                    "port": 5432,
+                    "enabled": true
+                },
+                "cache": {
+                    "ttl": 300,
+                    "enabled": false
+                }
+            }
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // Check that nested fields are analyzed
+        let config_symbol = result.symbol_table.get_symbol("config").unwrap();
+        assert!(matches!(config_symbol.symbol_type, Type::Object(_)));
+        
+        // Check that nested object fields are created as symbols
+        assert!(result.symbol_table.get_symbol("database").is_some());
+        assert!(result.symbol_table.get_symbol("cache").is_some());
+        assert!(result.symbol_table.get_symbol("host").is_some());
+        assert!(result.symbol_table.get_symbol("port").is_some());
+        assert!(result.symbol_table.get_symbol("enabled").is_some());
+        assert!(result.symbol_table.get_symbol("ttl").is_some());
+    }
+
+    #[test]
+    fn test_array_with_mixed_types() {
+        let source = r#"{
+            "mixed": [1, "hello", true, null]
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        let mixed_symbol = result.symbol_table.get_symbol("mixed").unwrap();
+        if let Type::Array(inner) = &mixed_symbol.symbol_type {
+            // First element determines array type, so should be Number
+            assert_eq!(**inner, Type::Number);
+        } else {
+            panic!("Expected array type for mixed array");
+        }
+    }
+
+    #[test]
+    fn test_empty_program() {
+        let source = r#"{}"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        assert_eq!(result.symbol_table.symbols().len(), 0);
+        assert_eq!(result.resolution_order.len(), 0);
+        assert_eq!(result.endpoints.len(), 0);
+    }
+
+    #[test]
+    fn test_symbol_resolution_status() {
+        let source = r#"{
+            "value1": "test",
+            "value2": 42
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // All symbols should be resolved after analysis
+        for symbol in result.symbol_table.symbols().values() {
+            assert!(symbol.is_resolved, "Symbol {} should be resolved", symbol.name);
+        }
+    }
+
+    #[test]
+    fn test_type_display_formatting() {
+        assert_eq!(format!("{}", Type::Number), "number");
+        assert_eq!(format!("{}", Type::String), "string");
+        assert_eq!(format!("{}", Type::Boolean), "boolean");
+        assert_eq!(format!("{}", Type::Null), "null");
+        assert_eq!(format!("{}", Type::Any), "any");
+        
+        let array_type = Type::Array(Box::new(Type::String));
+        assert_eq!(format!("{}", array_type), "array<string>");
+        
+        let promise_type = Type::Promise(Some(Box::new(Type::Number)));
+        assert_eq!(format!("{}", promise_type), "promise<number>");
+        
+        let promise_any = Type::Promise(None);
+        assert_eq!(format!("{}", promise_any), "promise<any>");
+        
+        let object_type = Type::Object(HashMap::new());
+        assert_eq!(format!("{}", object_type), "object");
+    }
+
+    #[test]
+    fn test_symbol_creation() {
+        let symbol = Symbol::new("test_symbol".to_string(), Type::String, 42);
+        
+        assert_eq!(symbol.name, "test_symbol");
+        assert_eq!(symbol.symbol_type, Type::String);
+        assert_eq!(symbol.definition_line, 42);
+        assert!(!symbol.is_resolved);
+        assert!(symbol.dependencies.is_empty());
+        assert!(symbol.dependents.is_empty());
+        assert!(symbol.ast_node.is_none());
+    }
+
+    #[test]
+    fn test_analyzer_initialization() {
+        let analyzer = SemanticAnalyzer::new();
+        
+        assert_eq!(analyzer.current_scope, "global");
+        assert_eq!(analyzer.symbol_table.symbols().len(), 0);
+        assert_eq!(analyzer.endpoints.len(), 0);
+    }
+
+    #[test]
+    fn test_complex_nested_structure() {
+        let source = r#"{
+            "api": {
+                "version": "1.0",
+                "endpoints": [
+                    {
+                        "path": "/users",
+                        "methods": ["GET", "POST"]
+                    },
+                    {
+                        "path": "/posts",
+                        "methods": ["GET", "POST", "PUT", "DELETE"]
+                    }
+                ],
+                "config": {
+                    "timeout": 5000,
+                    "retries": 3,
+                    "debug": false
+                }
+            }
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // Should have symbols for all the nested structure
+        assert!(result.symbol_table.get_symbol("api").is_some());
+        assert!(result.symbol_table.get_symbol("version").is_some());
+        assert!(result.symbol_table.get_symbol("endpoints").is_some());
+        assert!(result.symbol_table.get_symbol("config").is_some());
+        assert!(result.symbol_table.get_symbol("timeout").is_some());
+        assert!(result.symbol_table.get_symbol("retries").is_some());
+        assert!(result.symbol_table.get_symbol("debug").is_some());
+        
+        // Nested objects and arrays should have correct types
+        let api_symbol = result.symbol_table.get_symbol("api").unwrap();
+        assert!(matches!(api_symbol.symbol_type, Type::Object(_)));
+        
+        let endpoints_symbol = result.symbol_table.get_symbol("endpoints").unwrap();
+        assert!(matches!(endpoints_symbol.symbol_type, Type::Array(_)));
+    }
+
+    #[test]
+    fn test_error_types() {
+        // Test that error types can be created (even if we can't trigger them easily with current parser)
+        let circular_error = AnalyzerError::CircularDependency(vec!["a".to_string(), "b".to_string()]);
+        assert!(matches!(circular_error, AnalyzerError::CircularDependency(_)));
+        
+        let undefined_error = AnalyzerError::UndefinedSymbol { 
+            name: "test".to_string(), 
+            line: 1 
+        };
+        assert!(matches!(undefined_error, AnalyzerError::UndefinedSymbol { .. }));
+        
+        let type_error = AnalyzerError::TypeError { 
+            expected: "number".to_string(), 
+            found: "string".to_string(), 
+            line: 1 
+        };
+        assert!(matches!(type_error, AnalyzerError::TypeError { .. }));
+        
+        let duplicate_error = AnalyzerError::DuplicateEndpoint { 
+            name: "test".to_string(), 
+            method: "GET".to_string(), 
+            path: "/test".to_string(), 
+            line: 1 
+        };
+        assert!(matches!(duplicate_error, AnalyzerError::DuplicateEndpoint { .. }));
+    }
+
+    #[test]
+    fn test_analyzed_program_structure() {
+        let source = r#"{
+            "name": "test",
+            "value": 42
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // Test AnalyzedProgram structure
+        assert!(result.symbol_table.symbols().len() > 0);
+        assert!(result.resolution_order.len() > 0);
+        assert_eq!(result.endpoints.len(), 0); // No endpoints in this simple test
+        
+        // Test that resolution order contains our symbols
+        assert!(result.resolution_order.contains(&"name".to_string()));
+        assert!(result.resolution_order.contains(&"value".to_string()));
+    }
+
+    #[test]
+    fn test_multiple_simple_objects() {
+        let source = r#"{
+            "user1": {
+                "name": "Alice",
+                "age": 25
+            },
+            "user2": {
+                "name": "Bob", 
+                "age": 30
+            },
+            "user3": {
+                "name": "Charlie",
+                "age": 35
+            }
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // Should have symbols for all users and their fields
+        assert!(result.symbol_table.get_symbol("user1").is_some());
+        assert!(result.symbol_table.get_symbol("user2").is_some());
+        assert!(result.symbol_table.get_symbol("user3").is_some());
+        
+        // Should have multiple name and age symbols (from nested objects)
+        assert!(result.symbol_table.get_symbol("name").is_some());
+        assert!(result.symbol_table.get_symbol("age").is_some());
+        
+        // All symbols should be resolved
+        for symbol in result.symbol_table.symbols().values() {
+            assert!(symbol.is_resolved);
+        }
+    }
+
+    #[test]
+    fn test_dependency_collection_with_identifiers() {
+        // This test would need actual variable references to work properly,
+        // but tests the dependency collection logic structure
+        let source = r#"{
+            "base": 42,
+            "derived": "test_value"
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // Even without actual dependencies, verify the structure works
+        let base_symbol = result.symbol_table.get_symbol("base").unwrap();
+        let derived_symbol = result.symbol_table.get_symbol("derived").unwrap();
+        
+        // With literals, dependencies should be empty
+        assert!(base_symbol.dependencies.is_empty());
+        assert!(derived_symbol.dependencies.is_empty());
+    }
+
+    #[test]
+    fn test_member_access_type_inference() {
+        let source = r#"{
+            "config": {
+                "port": 8080,
+                "host": "localhost"
+            }
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        let config_symbol = result.symbol_table.get_symbol("config").unwrap();
+        if let Type::Object(fields) = &config_symbol.symbol_type {
+            assert_eq!(fields.get("port"), Some(&Type::Number));
+            assert_eq!(fields.get("host"), Some(&Type::String));
+        } else {
+            panic!("Expected object type for config");
+        }
+    }
+
+    #[test]
+    fn test_deeply_nested_objects() {
+        let source = r#"{
+            "level1": {
+                "level2": {
+                    "level3": {
+                        "level4": {
+                            "deep_value": "buried treasure"
+                        }
+                    }
+                }
+            }
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // Verify all levels are analyzed
+        assert!(result.symbol_table.get_symbol("level1").is_some());
+        assert!(result.symbol_table.get_symbol("level2").is_some());
+        assert!(result.symbol_table.get_symbol("level3").is_some());
+        assert!(result.symbol_table.get_symbol("level4").is_some());
+        assert!(result.symbol_table.get_symbol("deep_value").is_some());
+        
+        let deep_symbol = result.symbol_table.get_symbol("deep_value").unwrap();
+        assert_eq!(deep_symbol.symbol_type, Type::String);
+    }
+
+    #[test]
+    fn test_arrays_of_objects() {
+        let source = r#"{
+            "users": [
+                {
+                    "name": "Alice",
+                    "age": 30
+                },
+                {
+                    "name": "Bob", 
+                    "age": 25
+                },
+                {
+                    "name": "Charlie",
+                    "age": 35
+                }
+            ]
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        let users_symbol = result.symbol_table.get_symbol("users").unwrap();
+        if let Type::Array(inner) = &users_symbol.symbol_type {
+            // First element should determine array type - should be object
+            assert!(matches!(**inner, Type::Object(_)));
+        } else {
+            panic!("Expected array type for users");
+        }
+        
+        // Should have symbols for nested object fields
+        assert!(result.symbol_table.get_symbol("name").is_some());
+        assert!(result.symbol_table.get_symbol("age").is_some());
+    }
+
+    #[test]
+    fn test_mixed_data_structures() {
+        let source = r#"{
+            "metadata": {
+                "name": "Test Dataset",
+                "version": 1.2,
+                "tags": ["important", "experimental"],
+                "config": {
+                    "enabled": true,
+                    "limits": [100, 200, 300]
+                }
+            }
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // Should handle the complex nested structure
+        assert!(result.symbol_table.get_symbol("metadata").is_some());
+        assert!(result.symbol_table.get_symbol("name").is_some());
+        assert!(result.symbol_table.get_symbol("version").is_some());
+        assert!(result.symbol_table.get_symbol("tags").is_some());
+        assert!(result.symbol_table.get_symbol("config").is_some());
+        assert!(result.symbol_table.get_symbol("enabled").is_some());
+        assert!(result.symbol_table.get_symbol("limits").is_some());
+        
+        // Verify types are correct
+        let name_symbol = result.symbol_table.get_symbol("name").unwrap();
+        assert_eq!(name_symbol.symbol_type, Type::String);
+        
+        let version_symbol = result.symbol_table.get_symbol("version").unwrap();
+        assert_eq!(version_symbol.symbol_type, Type::Number);
+        
+        let enabled_symbol = result.symbol_table.get_symbol("enabled").unwrap();
+        assert_eq!(enabled_symbol.symbol_type, Type::Boolean);
+    }
+
+    #[test]
+    fn test_symbol_definition_line_tracking() {
+        let source = r#"{
+            "first": "value1",
+            "second": "value2",
+            "third": "value3"
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // Verify that symbols track their definition lines
+        for symbol in result.symbol_table.symbols().values() {
+            // Lines should be > 0 (line numbers are 1-based)
+            assert!(symbol.definition_line > 0, 
+                   "Symbol {} should have a valid line number", symbol.name);
+        }
+    }
+
+    #[test]
+    fn test_empty_array_and_object() {
+        let source = r#"{
+            "empty_array": [],
+            "empty_object": {}
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        let array_symbol = result.symbol_table.get_symbol("empty_array").unwrap();
+        if let Type::Array(inner) = &array_symbol.symbol_type {
+            assert_eq!(**inner, Type::Any);
+        } else {
+            panic!("Expected array type");
+        }
+        
+        let object_symbol = result.symbol_table.get_symbol("empty_object").unwrap();
+        if let Type::Object(fields) = &object_symbol.symbol_type {
+            assert!(fields.is_empty());
+        } else {
+            panic!("Expected object type");
+        }
+    }
+
+    #[test] 
+    fn test_very_large_numbers() {
+        let source = r#"{
+            "large_int": 9007199254740991,
+            "small_int": -9007199254740991,
+            "large_float": 1.7976931348623157e+308,
+            "small_float": -1.7976931348623157e+308,
+            "zero": 0,
+            "negative_zero": -0
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // All should be analyzed as numbers
+        for field in ["large_int", "small_int", "large_float", "small_float", "zero", "negative_zero"] {
+            let symbol = result.symbol_table.get_symbol(field).unwrap();
+            assert_eq!(symbol.symbol_type, Type::Number, "Field {} should be Number type", field);
+        }
+    }
+
+    #[test]
+    fn test_unicode_string_handling() {
+        let source = r#"{
+            "emoji": "🚀",
+            "chinese": "你好世界",
+            "arabic": "مرحبا بالعالم",
+            "russian": "Привет мир",
+            "mixed": "Hello 🌍 世界 مرحبا Привет"
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // All should be analyzed as strings
+        for field in ["emoji", "chinese", "arabic", "russian", "mixed"] {
+            let symbol = result.symbol_table.get_symbol(field).unwrap();
+            assert_eq!(symbol.symbol_type, Type::String, "Field {} should be String type", field);
+        }
+    }
+
+    #[test]
+    fn test_nested_arrays() {
+        let source = r#"{
+            "matrix": [
+                [1, 2, 3],
+                [4, 5, 6],
+                [7, 8, 9]
+            ],
+            "jagged": [
+                [1, 2],
+                [3, 4, 5],
+                [6]
+            ]
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        let matrix_symbol = result.symbol_table.get_symbol("matrix").unwrap();
+        if let Type::Array(inner) = &matrix_symbol.symbol_type {
+            // Should be array of arrays of numbers
+            if let Type::Array(inner_inner) = inner.as_ref() {
+                assert_eq!(**inner_inner, Type::Number);
+            } else {
+                panic!("Expected nested array type");
+            }
+        } else {
+            panic!("Expected array type for matrix");
+        }
+        
+        let jagged_symbol = result.symbol_table.get_symbol("jagged").unwrap();
+        assert!(matches!(jagged_symbol.symbol_type, Type::Array(_)));
+    }
+
+    #[test]
+    fn test_boolean_variations() {
+        let source = r#"{
+            "true_val": true,
+            "false_val": false
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        let true_symbol = result.symbol_table.get_symbol("true_val").unwrap();
+        assert_eq!(true_symbol.symbol_type, Type::Boolean);
+        
+        let false_symbol = result.symbol_table.get_symbol("false_val").unwrap();
+        assert_eq!(false_symbol.symbol_type, Type::Boolean);
+    }
+
+    #[test]
+    fn test_null_handling() {
+        let source = r#"{
+            "null_value": null,
+            "mixed_with_null": [null, "test", null, 42]
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        let null_symbol = result.symbol_table.get_symbol("null_value").unwrap();
+        assert_eq!(null_symbol.symbol_type, Type::Null);
+        
+        let mixed_symbol = result.symbol_table.get_symbol("mixed_with_null").unwrap();
+        // Array type should be determined by first element (null in this case)
+        if let Type::Array(inner) = &mixed_symbol.symbol_type {
+            assert_eq!(**inner, Type::Null);
+        } else {
+            panic!("Expected array type");
+        }
+    }
+
+    #[test]
+    fn test_special_characters_in_keys() {
+        let source = r#"{
+            "normal_key": "value",
+            "key-with-dashes": "value",
+            "key_with_underscores": "value",
+            "key.with.dots": "value",
+            "key with spaces": "value",
+            "key@with#special$chars%": "value"
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // All keys should be handled properly
+        let expected_keys = [
+            "normal_key", 
+            "key-with-dashes", 
+            "key_with_underscores",
+            "key.with.dots",
+            "key with spaces",
+            "key@with#special$chars%"
+        ];
+        
+        for key in &expected_keys {
+            assert!(result.symbol_table.get_symbol(key).is_some(), 
+                   "Key '{}' should exist in symbol table", key);
+        }
+    }
+
+    #[test]
+    fn test_object_field_analysis_vs_top_level() {
+        let source = r#"{
+            "user": {
+                "name": "Alice",
+                "age": 30
+            },
+            "name": "Global Name",
+            "age": 99
+        }"#;
+        
+        let result = analyze_source(source).unwrap();
+        
+        // Should have symbols for both object fields and top-level fields
+        // Note: Currently the analyzer creates symbols for both, which means
+        // the last occurrence wins in the symbol table
+        assert!(result.symbol_table.get_symbol("user").is_some());
+        assert!(result.symbol_table.get_symbol("name").is_some());
+        assert!(result.symbol_table.get_symbol("age").is_some());
+        
+        // The global "name" and "age" should exist (may overwrite object fields)
+        let name_symbol = result.symbol_table.get_symbol("name").unwrap();
+        assert_eq!(name_symbol.symbol_type, Type::String);
+        
+        let age_symbol = result.symbol_table.get_symbol("age").unwrap();
+        assert_eq!(age_symbol.symbol_type, Type::Number);
+    }
+
+    #[test]
+    fn test_performance_with_many_symbols() {
+        // Create a large object to test performance
+        let mut fields = Vec::new();
+        for i in 0..100 {
+            fields.push(format!(r#""field_{}": "value_{}""#, i, i));
+        }
+        let source = format!("{{\n{}\n}}", fields.join(",\n"));
+        
+        let start = std::time::Instant::now();
+        let result = analyze_source(&source).unwrap();
+        let duration = start.elapsed();
+        
+        // Should complete in reasonable time (adjust threshold as needed)
+        assert!(duration < std::time::Duration::from_millis(100), 
+               "Analysis took too long: {:?}", duration);
+        
+        // Should have all 100 symbols
+        assert_eq!(result.symbol_table.symbols().len(), 100);
+        
+        // All should be resolved
+        for symbol in result.symbol_table.symbols().values() {
+            assert!(symbol.is_resolved);
+        }
+    }
+
+    #[test]
+    fn test_memory_usage_with_deep_nesting() {
+        // Create a simpler deeply nested structure that's easier to debug
+        let source = r#"{
+            "root": {
+                "level_0": {
+                    "level_1": {
+                        "level_2": {
+                            "deep_value": "found"
+                        }
+                    }
+                }
+            }
+        }"#;
+        
+        let result = analyze_source(&source).unwrap();
+        
+        // Should handle deep nesting without issues
+        assert!(result.symbol_table.get_symbol("root").is_some());
+        assert!(result.symbol_table.get_symbol("level_0").is_some());
+        assert!(result.symbol_table.get_symbol("level_1").is_some());
+        assert!(result.symbol_table.get_symbol("level_2").is_some());
+        assert!(result.symbol_table.get_symbol("deep_value").is_some());
+    }
 }

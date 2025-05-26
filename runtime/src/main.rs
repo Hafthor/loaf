@@ -7,12 +7,12 @@ fn main() {
     println!("Loaf Bytecode Runtime v{}", VERSION);
     
     // Create demo bytecode file
-    let demo_path = Path::new("demo.bytecode");
+    let demo_path = Path::new("demo.crouton");
     let demo_module = generate_demo_module();
     match write_bytecode(&demo_module, demo_path) {
-        Ok(_) => println!("Created demo bytecode file: demo.bytecode"),
+        Ok(_) => println!("Created demo bytecode file: demo.crouton"),
         Err(e) => {
-            eprintln!("Failed to create demo bytecode file: {}", e);
+            eprintln!("Failed to create demo crouton file: {}", e);
             return;
         }
     }
@@ -25,8 +25,8 @@ fn main() {
     ).expect("Failed to initialize the runtime");
     
     // Execute the demo file
-    println!("\nExecuting demo bytecode...");
-    match runtime.execute_file("demo.bytecode") {
+    println!("\nExecuting demo crouton...");
+    match runtime.execute_file("demo.crouton") {
         Ok(result) => println!("Execution completed with result: {}", result),
         Err(e) => eprintln!("Execution failed: {}", e),
     }
