@@ -1,0 +1,23 @@
+{
+  "message": "Hello, Test!",
+  "count": 42,
+  "config": {
+    "enabled": true,
+    "name": "test"
+  }
+}
+
+@test "message should be correct" {
+  expect: message,
+  equals: "Hello, Test!"
+}
+
+@test "count should be 42" {
+  expect: count,
+  equals: 42
+}
+
+@test "config access should work" {
+  expect: config.name,
+  equals: "test"
+}

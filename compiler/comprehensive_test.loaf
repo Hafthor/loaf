@@ -1,0 +1,99 @@
+// Comprehensive test file demonstrating the test runner capabilities
+{
+  // Basic data types
+  "string_val": "Hello, World!",
+  "number_val": 42.5,
+  "boolean_val": true,
+  "null_val": null,
+  
+  // Arrays 
+  "simple_array": [1, 2, 3, 4, 5],
+  "string_array": ["apple", "banana", "cherry"],
+  "mixed_array": [1, "hello", true, null],
+  
+  // Objects
+  "config": {
+    "debug": true,
+    "version": "1.0.0",
+    "max_connections": 100
+  },
+  
+  // Computed values (for this demo, just literals)
+  "computed_sum": 47.5,
+  "computed_message": "The answer is 42.5"
+}
+
+// Basic type tests
+@test "string should match expected value" {
+  expect: string_val,
+  equals: "Hello, World!"
+}
+
+@test "number should be correct" {
+  expect: number_val,
+  equals: 42.5
+}
+
+@test "boolean should be true" {
+  expect: boolean_val,
+  equals: true
+}
+
+@test "null value should be null" {
+  expect: null_val,
+  equals: null
+}
+
+// Array tests (testing whole arrays)
+@test "simple array should match" {
+  expect: simple_array,
+  equals: [1, 2, 3, 4, 5]
+}
+
+@test "string array should match" {
+  expect: string_array,
+  equals: ["apple", "banana", "cherry"]
+}
+
+@test "mixed array should match" {
+  expect: mixed_array,
+  equals: [1, "hello", true, null]
+}
+
+// Object tests (testing whole objects)
+@test "config object should match" {
+  expect: config,
+  equals: {
+    "debug": true,
+    "version": "1.0.0",
+    "max_connections": 100
+  }
+}
+
+// Computed value tests
+@test "computed sum should be correct" {
+  expect: computed_sum,
+  equals: 47.5
+}
+
+@test "computed message should match" {
+  expect: computed_message,
+  equals: "The answer is 42.5"
+}
+
+// Regex pattern test
+@test "string should match Hello pattern" {
+  expect: string_val,
+  matches: "Hello.*"
+}
+
+@test "version should match semantic version pattern" {
+  expect: config.version,
+  matches: "\\d+\\.\\d+\\.\\d+"
+}
+
+// Test that should fail (for demonstration)
+@test "this test should fail" {
+  expect: number_val,
+  equals: 999
+}

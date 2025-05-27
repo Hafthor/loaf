@@ -3,6 +3,7 @@ use crate::codegen::CodeGenerator;
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 use crate::runtime::{HttpRequest, LoafServer};
+use crate::test_runner::TestRunner;
 use anyhow::{anyhow, Result};
 use clap::{Parser as ClapParser, Subcommand};
 use std::fs;
@@ -76,6 +77,17 @@ pub enum Commands {
         #[arg(long)]
         deps: bool,
     },
+    
+    /// Run tests in a loaf source file
+    Test {
+        /// Input loaf source file containing tests
+        #[arg(short, long)]
+        input: PathBuf,
+        
+        /// Show detailed test information
+        #[arg(long)]
+        verbose: bool,
+    },
 }
 
 pub struct CliHandler;
@@ -99,6 +111,9 @@ impl CliHandler {
             }
             Commands::Info { input, symbols, deps } => {
                 self.handle_info(input, symbols, deps).await
+            }
+            Commands::Test { input, verbose } => {
+                self.handle_test(input, verbose).await
             }
         }
     }
@@ -315,6 +330,69 @@ impl CliHandler {
         Ok(())
     }
 
+    async fn handle_test(&self, input: PathBuf, verbose: bool) -> Result<()> {
+        if verbose {
+            println!("Running tests from {}...", input.display());
+        }
+
+        // Read source file
+        let source = fs::read_to_string(&input)
+            .map_err(|e| anyhow!("Failed to read input file: {}", e))?;
+
+        // Parse and analyze to extract test information
+        let mut lexer = Lexer::new(&source);
+        let tokens = lexer.tokenize()
+            .map_err(|e| anyhow!("Lexical analysis failed: {}", e))?;
+
+        let mut parser = Parser::new(tokens);
+        let ast = parser.parse()
+            .map_err(|e| anyhow!("Parsing failed: {}", e))?;
+
+        let mut analyzer = SemanticAnalyzer::new();
+        let analyzed = analyzer.analyze(&ast)
+            .map_err(|e| anyhow!("Semantic analysis failed: {}", e))?;
+
+        // Check if there are any tests
+        if analyzed.tests.is_empty() {
+            println!("No tests found in {}", input.display());
+            return Ok(());
+        }
+
+        if verbose {
+            println!("Found {} test(s)", analyzed.tests.len());
+        }
+
+        // Create test runner and run tests
+        let test_runner = TestRunner::new(verbose);
+        let summary = test_runner.run_tests(&analyzed);
+
+        // Display summary
+        println!("\nTest Summary:");
+        println!("  Passed: {}", summary.passed);
+        println!("  Failed: {}", summary.failed);
+        println!("  Total:  {}", summary.total);
+        
+        // Display failed tests
+        let failed_tests: Vec<_> = summary.results.iter()
+            .filter(|result| !result.passed)
+            .collect();
+            
+        if !failed_tests.is_empty() {
+            println!("\nFailures:");
+            for failure in failed_tests {
+                println!("  {}", failure);
+            }
+        }
+
+        // Exit with error code if tests failed
+        if summary.failed > 0 {
+            return Err(anyhow!("{} test(s) failed", summary.failed));
+        }
+
+        println!("All tests passed!");
+        Ok(())
+    }
+
     fn compile_source(&self, source: &str) -> Result<crate::codegen::BytecodeProgram> {
         // Tokenize
         let mut lexer = Lexer::new(source);
@@ -432,6 +510,33 @@ mod tests {
         let result = cli_handler.handle_server(
             temp_file.path().to_path_buf(),
             4271,
+            true
+        ).await;
+        
+        assert!(result.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_test_command() {
+        let mut temp_file = NamedTempFile::new().unwrap();
+        writeln!(temp_file, r#"{{
+          "tests": [
+            {{
+              "name": "test_addition",
+              "input": {{ "a": 5, "b": 10 }},
+              "expected": {{ "result": 15 }}
+            }},
+            {{
+              "name": "test_subtraction", 
+              "input": {{ "a": 10, "b": 5 }},
+              "expected": {{ "result": 5 }}
+            }}
+          ]
+        }}"#).unwrap();
+        
+        let cli_handler = CliHandler::new();
+        let result = cli_handler.handle_test(
+            temp_file.path().to_path_buf(),
             true
         ).await;
         

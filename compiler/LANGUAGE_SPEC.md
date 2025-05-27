@@ -371,6 +371,346 @@ Supported HTTP methods:
 - `DELETE` - Remove resources
 - `PATCH` - Partial updates
 
+## Unit Testing
+
+### Overview
+
+loaf includes a built-in unit testing framework that allows developers to write tests directly in their loaf source files. Tests are defined using the special `@test` annotation and can validate the behavior of expressions, data transformations, and computed values.
+
+### Test Syntax
+
+Tests are declared using the `@test` annotation followed by a test configuration object:
+
+```loaf
+{
+  // Regular program logic
+  config: {
+    version: "1.0.0",
+    name: "My App"
+  },
+  
+  greeting: "Hello, " + config.name,
+  
+  // Unit tests
+  testGreeting: @test {
+    name: "should generate correct greeting",
+    actual: greeting,
+    expect: "Hello, My App"
+  },
+  
+  testVersion: @test {
+    name: "should have correct version",
+    actual: config.version,
+    expect: "1.0.0"
+  }
+}
+```
+
+### Test Configuration
+
+Each test requires the following properties:
+
+- **`name`**: A descriptive string identifying the test
+- **`actual`**: The expression or value to test
+- **`expect`**: The expected result to compare against
+
+```loaf
+{
+  value: 42,
+  doubled: value * 2,
+  
+  testDoubling: @test {
+    name: "should double the value correctly",
+    actual: doubled,
+    expect: 84
+  }
+}
+```
+
+### Value Comparison
+
+The test framework performs deep comparison of values:
+
+#### Primitive Values
+
+```loaf
+{
+  // Numbers (supports floating-point comparison with epsilon tolerance)
+  testNumber: @test {
+    name: "should handle numbers",
+    actual: 3.14159,
+    expect: 3.14159
+  },
+  
+  // Strings
+  testString: @test {
+    name: "should handle strings",
+    actual: "hello world",
+    expect: "hello world"
+  },
+  
+  // Booleans
+  testBoolean: @test {
+    name: "should handle booleans",
+    actual: true,
+    expect: true
+  },
+  
+  // Null values
+  testNull: @test {
+    name: "should handle null",
+    actual: null,
+    expect: null
+  }
+}
+```
+
+#### Complex Objects
+
+The test framework supports deep comparison of objects and arrays, ignoring field order in objects:
+
+```loaf
+{
+  user: {
+    name: "Alice",
+    age: 30,
+    active: true
+  },
+  
+  // Object comparison (field order ignored)
+  testUser: @test {
+    name: "should match user object",
+    actual: user,
+    expect: {
+      active: true,
+      name: "Alice",
+      age: 30
+    }
+  },
+  
+  // Array comparison (order matters)
+  numbers: [1, 2, 3],
+  testNumbers: @test {
+    name: "should match number array",
+    actual: numbers,
+    expect: [1, 2, 3]
+  }
+}
+```
+
+#### Nested Structures
+
+```loaf
+{
+  data: {
+    users: [
+      { name: "Alice", roles: ["admin", "user"] },
+      { name: "Bob", roles: ["user"] }
+    ],
+    meta: {
+      count: 2,
+      version: "1.0"
+    }
+  },
+  
+  testNestedData: @test {
+    name: "should handle nested structures",
+    actual: data,
+    expect: {
+      meta: {
+        version: "1.0",
+        count: 2
+      },
+      users: [
+        { roles: ["admin", "user"], name: "Alice" },
+        { roles: ["user"], name: "Bob" }
+      ]
+    }
+  }
+}
+```
+
+### Member Access in Tests
+
+Tests can access object properties using dot notation:
+
+```loaf
+{
+  config: {
+    server: {
+      port: 8080,
+      host: "localhost"
+    },
+    app: {
+      name: "MyApp",
+      version: "2.1.0"
+    }
+  },
+  
+  testPort: @test {
+    name: "should have correct port",
+    actual: config.server.port,
+    expect: 8080
+  },
+  
+  testAppName: @test {
+    name: "should have correct app name",
+    actual: config.app.name,
+    expect: "MyApp"
+  }
+}
+```
+
+### Testing Expressions
+
+Tests can validate the results of complex expressions:
+
+```loaf
+{
+  price: 100,
+  tax: 0.08,
+  quantity: 3,
+  
+  subtotal: price * quantity,
+  taxAmount: subtotal * tax,
+  total: subtotal + taxAmount,
+  
+  testSubtotal: @test {
+    name: "should calculate subtotal",
+    actual: subtotal,
+    expect: 300
+  },
+  
+  testTotal: @test {
+    name: "should calculate total with tax",
+    actual: total,
+    expect: 324
+  }
+}
+```
+
+### Running Tests
+
+Tests are executed using the loaf compiler's test runner:
+
+```bash
+# Run all tests in a file
+loaf test program.loaf
+
+# Run tests with verbose output
+loaf test --verbose program.loaf
+
+# Run tests and show detailed comparison for failures
+loaf test --debug program.loaf
+```
+
+### Test Output
+
+The test runner provides detailed feedback:
+
+```
+Running tests in: program.loaf
+
+✓ should generate correct greeting
+✓ should have correct version
+✓ should double the value correctly
+✗ should fail deliberately
+
+Test Results: 3/4 tests passed (75%)
+
+Failures:
+1. should fail deliberately
+   Expected: "expected value"
+   Actual:   "actual value"
+```
+
+### Test Execution Model
+
+1. **Discovery**: The compiler scans for `@test` annotations during parsing
+2. **Analysis**: Test expressions are analyzed for dependencies
+3. **Execution**: Tests run after all dependencies are resolved
+4. **Evaluation**: Both `actual` and `expect` values are computed
+5. **Comparison**: Values are compared using deep equality
+6. **Reporting**: Results are collected and reported
+
+### Best Practices
+
+#### Test Organization
+
+```loaf
+{
+  // Group related functionality
+  mathUtils: {
+    add: 5 + 3,
+    multiply: 4 * 6,
+    divide: 10 / 2
+  },
+  
+  // Test the group
+  testMathAdd: @test {
+    name: "math utils - addition",
+    actual: mathUtils.add,
+    expect: 8
+  },
+  
+  testMathMultiply: @test {
+    name: "math utils - multiplication", 
+    actual: mathUtils.multiply,
+    expect: 24
+  }
+}
+```
+
+#### Descriptive Test Names
+
+```loaf
+{
+  user: { name: "Alice", age: 25 },
+  canVote: user.age >= 18,
+  
+  // Good: descriptive test name
+  testVotingEligibility: @test {
+    name: "user over 18 should be eligible to vote",
+    actual: canVote,
+    expect: true
+  },
+  
+  // Avoid: vague test name
+  testUser: @test {
+    name: "test user",
+    actual: canVote,
+    expect: true
+  }
+}
+```
+
+#### Edge Case Testing
+
+```loaf
+{
+  divide: |a, b| a / b,
+  
+  testNormalDivision: @test {
+    name: "should divide normal numbers",
+    actual: divide(10, 2),
+    expect: 5
+  },
+  
+  testZeroDivision: @test {
+    name: "should handle division by zero",
+    actual: divide(10, 0),
+    expect: null  // or however the language handles this
+  }
+}
+```
+
+### Integration with Development Workflow
+
+1. **Write Tests First**: Define expected behavior with tests before implementation
+2. **Test During Development**: Run tests frequently during development
+3. **Continuous Integration**: Include tests in automated build pipelines
+4. **Documentation**: Tests serve as executable documentation of expected behavior
+
 ## Runtime Behavior
 
 ### Execution Model
@@ -477,6 +817,90 @@ Error Types:
 }
 ```
 
+### Unit Testing Example
+
+```loaf
+{
+  // Application configuration
+  config: {
+    name: "E-commerce API",
+    version: "2.1.0",
+    taxRate: 0.08,
+    currency: "USD"
+  },
+  
+  // Business logic
+  calculatePrice: |basePrice, quantity| basePrice * quantity,
+  calculateTax: |amount| amount * config.taxRate,
+  
+  // Sample data
+  product: {
+    name: "Widget",
+    basePrice: 25.99,
+    category: "electronics"
+  },
+  
+  orderQuantity: 3,
+  subtotal: calculatePrice(product.basePrice, orderQuantity),
+  taxAmount: calculateTax(subtotal),
+  total: subtotal + taxAmount,
+  
+  // Comprehensive test suite
+  testConfig: @test {
+    name: "should have correct configuration",
+    actual: config.name,
+    expect: "E-commerce API"
+  },
+  
+  testPriceCalculation: @test {
+    name: "should calculate subtotal correctly",
+    actual: subtotal,
+    expect: 77.97
+  },
+  
+  testTaxCalculation: @test {
+    name: "should calculate tax at 8%",
+    actual: taxAmount,
+    expect: 6.2376
+  },
+  
+  testTotalCalculation: @test {
+    name: "should calculate total with tax",
+    actual: total,
+    expect: 84.2076
+  },
+  
+  testProductStructure: @test {
+    name: "should have complete product information",
+    actual: product,
+    expect: {
+      category: "electronics",
+      basePrice: 25.99,
+      name: "Widget"
+    }
+  },
+  
+  testConfigVersion: @test {
+    name: "should have correct version number",
+    actual: config.version,
+    expect: "2.1.0"
+  },
+  
+  testCurrency: @test {
+    name: "should use USD currency",
+    actual: config.currency,
+    expect: "USD"
+  },
+  
+  // Test with member access
+  testNestedAccess: @test {
+    name: "should access nested product name",
+    actual: product.name,
+    expect: "Widget"
+  }
+}
+```
+
 ## Best Practices
 
 ### Code Organization
@@ -485,6 +909,16 @@ Error Types:
 2. **Use Descriptive Names**: Choose clear, meaningful variable names
 3. **Minimize Dependencies**: Reduce complex dependency chains when possible
 4. **Comment Complex Logic**: Use comments for complex expressions
+5. **Write Tests Early**: Define tests alongside or before implementation
+6. **Test Edge Cases**: Include tests for boundary conditions and error cases
+
+### Testing Guidelines
+
+1. **Descriptive Test Names**: Use clear, specific test names that describe expected behavior
+2. **Test One Thing**: Each test should validate a single aspect of functionality
+3. **Include Edge Cases**: Test boundary conditions, null values, and error scenarios
+4. **Group Related Tests**: Organize tests logically near the code they validate
+5. **Test Public Interfaces**: Focus tests on observable behavior rather than implementation details
 
 ### Performance Considerations
 
@@ -514,6 +948,15 @@ loaf run --input program.loaf
 # Start HTTP server with endpoints
 loaf server --input endpoints.loaf --port 4271
 
+# Run unit tests
+loaf test program.loaf
+
+# Run tests with verbose output
+loaf test --verbose program.loaf
+
+# Run tests with detailed debugging information
+loaf test --debug program.loaf
+
 # Show program information
 loaf info --input program.loaf --symbols --deps
 ```
@@ -521,9 +964,11 @@ loaf info --input program.loaf --symbols --deps
 ### Development Workflow
 
 1. Write loaf source code (`.loaf` files)
-2. Compile to bytecode (`.crouton` files) 
-3. Run with loaf runtime
-4. Deploy as HTTP service
+2. Write unit tests using `@test` annotations
+3. Run tests to validate behavior (`loaf test`)
+4. Compile to bytecode (`.crouton` files) 
+5. Run with loaf runtime
+6. Deploy as HTTP service
 
 ## Future Extensions
 

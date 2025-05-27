@@ -1,0 +1,15 @@
+{
+  "message": "Hello, World!",
+  "count": 42,
+  "active": true
+}
+
+@test "message test" {
+  expect: message,
+  equals: "Hello, World!"
+}
+
+@test "count test" {
+  expect: count,
+  equals: 42
+}

@@ -151,6 +151,7 @@ pub struct SemanticAnalyzer {
     symbol_table: SymbolTable,
     current_scope: String,
     endpoints: Vec<EndpointInfo>,
+    tests: Vec<TestInfo>,
 }
 
 #[derive(Debug, Clone)]
@@ -162,12 +163,23 @@ pub struct EndpointInfo {
     pub line: usize,
 }
 
+#[derive(Debug, Clone)]
+pub struct TestInfo {
+    pub name: String,
+    pub expect_expression: AstNode,
+    pub inputs: HashMap<String, AstNode>,
+    pub expected_output: AstNode,
+    pub is_regex: bool,
+    pub line: usize,
+}
+
 impl SemanticAnalyzer {
     pub fn new() -> Self {
         Self {
             symbol_table: SymbolTable::new(),
             current_scope: "global".to_string(),
             endpoints: Vec::new(),
+            tests: Vec::new(),
         }
     }
 
@@ -188,6 +200,7 @@ impl SemanticAnalyzer {
             symbol_table: self.symbol_table.clone(),
             resolution_order,
             endpoints: self.endpoints.clone(),
+            tests: self.tests.clone(),
         })
     }
 
@@ -231,6 +244,25 @@ impl SemanticAnalyzer {
                 
                 // Analyze the handler
                 self.collect_symbols(handler)?;
+            }
+            
+            AstNode::Test { name, expect_expression, inputs, expected_output, is_regex, line } => {
+                // Register the test
+                self.tests.push(TestInfo {
+                    name: name.clone(),
+                    expect_expression: expect_expression.as_ref().clone(),
+                    inputs: inputs.clone(),
+                    expected_output: expected_output.as_ref().clone(),
+                    is_regex: *is_regex,
+                    line: *line,
+                });
+                
+                // Analyze the expect expression, inputs and expected output
+                self.collect_symbols(expect_expression)?;
+                for (_, input_value) in inputs {
+                    self.collect_symbols(input_value)?;
+                }
+                self.collect_symbols(expected_output)?;
             }
             
             AstNode::Object { fields, line } => {
@@ -539,6 +571,11 @@ impl SemanticAnalyzer {
                 }
             }
             
+            AstNode::Test { .. } => {
+                // Test declarations don't have a runtime type, they are metadata
+                Ok(Type::Any)
+            }
+            
             _ => Ok(Type::Any),
         }
     }
@@ -638,6 +675,10 @@ impl SemanticAnalyzer {
     pub fn endpoints(&self) -> &[EndpointInfo] {
         &self.endpoints
     }
+
+    pub fn tests(&self) -> &[TestInfo] {
+        &self.tests
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -645,6 +686,7 @@ pub struct AnalyzedProgram {
     pub symbol_table: SymbolTable,
     pub resolution_order: Vec<String>,
     pub endpoints: Vec<EndpointInfo>,
+    pub tests: Vec<TestInfo>,
 }
 
 #[derive(Debug, thiserror::Error)]

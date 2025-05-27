@@ -1,0 +1,85 @@
+// Test file demonstrating the Loaf test runner functionality
+{
+  // Basic arithmetic tests
+  simple_number: 42,
+  simple_string: "hello world",
+  simple_bool: true,
+  
+  // Math operations
+  addition: 10 + 5,
+  multiplication: 6 * 7,
+  
+  // String operations
+  greeting: "Hello, " + "World!",
+  
+  // JSON object
+  user: {
+    name: "Alice",
+    age: 30,
+    active: true
+  },
+  
+  // Array
+  numbers: [1, 2, 3, 4, 5]
+}
+
+// Test cases using @test annotation
+@test "simple number should be 42" {
+  expect: simple_number,
+  equals: 42
+}
+
+@test "string concatenation should work" {
+  expect: greeting,
+  equals: "Hello, World!"
+}
+
+@test "addition should work correctly" {
+  expect: addition,
+  equals: 15
+}
+
+@test "multiplication should work correctly" {
+  expect: multiplication,
+  equals: 42
+}
+
+@test "user name should be Alice" {
+  expect: user.name,
+  equals: "Alice"
+}
+
+@test "user should be active" {
+  expect: user.active,
+  equals: true
+}
+
+@test "numbers array should have 5 elements" {
+  expect: numbers.length,
+  equals: 5
+}
+
+@test "first number should be 1" {
+  expect: numbers[0],
+  equals: 1
+}
+
+@test "greeting should match pattern" {
+  expect: greeting,
+  matches: "Hello.*World"
+}
+
+@test "simple string should contain hello" {
+  expect: simple_string,
+  matches: ".*hello.*"
+}
+
+@test "user age should be greater than 25" {
+  expect: user.age,
+  greater_than: 25
+}
+
+@test "addition result should be less than 20" {
+  expect: addition,
+  less_than: 20
+}

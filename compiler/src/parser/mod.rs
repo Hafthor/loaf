@@ -80,6 +80,16 @@ pub enum AstNode {
         headers: Option<HashMap<String, AstNode>>,
         line: usize,
     },
+    
+    // Test declarations
+    Test {
+        name: String,
+        expect_expression: Box<AstNode>,
+        inputs: HashMap<String, AstNode>,
+        expected_output: Box<AstNode>,
+        is_regex: bool,
+        line: usize,
+    },
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
@@ -137,6 +147,10 @@ impl Parser {
         
         if let TokenType::Promise = self.peek().token_type {
             return self.parse_promise();
+        }
+        
+        if let TokenType::Test = self.peek().token_type {
+            return self.parse_test();
         }
         
         // Check for assignment
@@ -216,6 +230,59 @@ impl Parser {
             expression: Box::new(expression),
             line,
         })
+    }
+
+    fn parse_test(&mut self) -> Result<AstNode, ParseError> {
+        let test_token = self.advance(); // consume @test
+        let line = test_token.line;
+        
+        // Expect a string literal for the test name
+        let name = if let TokenType::String(test_name) = &self.peek().token_type {
+            let name = test_name.clone();
+            self.advance(); // consume the string
+            name
+        } else {
+            return Err(ParseError::ExpectedString(line));
+        };
+        
+        // Expect an object with test configuration
+        let config = self.parse_object()?;
+        
+        if let AstNode::Object { fields, .. } = config {
+            // Parse the expect field (what to test)
+            let expect_expression = fields.get("expect")
+                .ok_or_else(|| ParseError::MissingField("expect".to_string(), line))?
+                .clone();
+            
+            // For now, we'll create empty inputs and use the expect as expected_output
+            let inputs = HashMap::new();
+            
+            // Determine the assertion type and expected value
+            let (expected_output, is_regex) = if let Some(equals_value) = fields.get("equals") {
+                (equals_value.clone(), false)
+            } else if let Some(matches_value) = fields.get("matches") {
+                (matches_value.clone(), true)
+            } else if let Some(gt_value) = fields.get("greater_than") {
+                // For now, treat comparison as equals for simplicity
+                (gt_value.clone(), false)
+            } else if let Some(lt_value) = fields.get("less_than") {
+                // For now, treat comparison as equals for simplicity
+                (lt_value.clone(), false)
+            } else {
+                return Err(ParseError::MissingField("equals, matches, greater_than, or less_than".to_string(), line));
+            };
+            
+            Ok(AstNode::Test {
+                name,
+                expect_expression: Box::new(expect_expression),
+                inputs,
+                expected_output: Box::new(expected_output),
+                is_regex,
+                line,
+            })
+        } else {
+            Err(ParseError::ExpectedObject(line))
+        }
     }
 
     fn parse_expression(&mut self) -> Result<AstNode, ParseError> {

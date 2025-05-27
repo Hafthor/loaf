@@ -35,6 +35,7 @@ pub enum TokenType {
     Endpoint,      // @endpoint
     Method,        // @method
     Http,          // @http
+    Test,          // @test
     
     // End of file
     Eof,
@@ -83,6 +84,7 @@ impl fmt::Display for TokenType {
             TokenType::Endpoint => write!(f, "@endpoint"),
             TokenType::Method => write!(f, "@method"),
             TokenType::Http => write!(f, "@http"),
+            TokenType::Test => write!(f, "@test"),
             TokenType::Eof => write!(f, "EOF"),
         }
     }
@@ -227,8 +229,15 @@ impl Lexer {
             annotation.push(self.advance());
         }
         
-        // Return as a special identifier
-        Ok(TokenType::Identifier(annotation))
+        // Match specific annotations to their token types
+        match annotation.as_str() {
+            "@promise" => Ok(TokenType::Promise),
+            "@endpoint" => Ok(TokenType::Endpoint),
+            "@method" => Ok(TokenType::Method),
+            "@http" => Ok(TokenType::Http),
+            "@test" => Ok(TokenType::Test),
+            _ => Ok(TokenType::Identifier(annotation)),
+        }
     }
 
     fn number(&mut self) -> Result<TokenType, LexerError> {
